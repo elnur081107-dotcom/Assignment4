@@ -2,13 +2,17 @@ package service;
 
 import exception.ResourceNotFoundException;
 import model.Car;
-import repository.CarRepository;
+import repository.CarRepositoryPort;
 
 import java.util.List;
 
 public class CarService {
 
-    private final CarRepository repository = new CarRepository();
+    private final CarRepositoryPort repository;
+
+    public CarService(CarRepositoryPort repository) {
+        this.repository = repository;
+    }
 
     public void addCar(Car car) {
         car.validate();
@@ -27,9 +31,14 @@ public class CarService {
         return car;
     }
 
+    public void updateCar(Car car) {
+        getCar(car.getId());
+        car.validate();
+        repository.update(car);
+    }
+
     public void deleteCar(int id) {
         getCar(id);
         repository.delete(id);
     }
 }
-

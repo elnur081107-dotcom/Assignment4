@@ -3,15 +3,21 @@ package service;
 import exception.InvalidInputException;
 import exception.ResourceNotFoundException;
 import model.Car;
-import repository.CarRepository;
+import repository.CarRepositoryPort;
 import repository.RentalRepository;
 
 import java.time.LocalDate;
 
 public class RentalService {
 
-    private final CarRepository carRepository = new CarRepository();
-    private final RentalRepository rentalRepository = new RentalRepository();
+    private final CarRepositoryPort carRepository;
+    private final RentalRepository rentalRepository;
+
+    public RentalService(CarRepositoryPort carRepository,
+                         RentalRepository rentalRepository) {
+        this.carRepository = carRepository;
+        this.rentalRepository = rentalRepository;
+    }
 
     public void rentCar(int carId, int customerId,
                         LocalDate start, LocalDate end) {
@@ -30,7 +36,8 @@ public class RentalService {
         }
 
         rentalRepository.create(carId, customerId, start, end);
+
         car.rent();
+        carRepository.update(car);
     }
 }
-

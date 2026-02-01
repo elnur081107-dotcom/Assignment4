@@ -2,12 +2,14 @@ package model;
 
 public class Car extends BaseEntity implements Validatable, PricedItem {
 
-    protected double pricePerDay;
-    protected boolean available;
+    private double pricePerDay;
+    private boolean available;
+    private Engine engine;
 
-    public Car(int id, String name, double pricePerDay) {
+    public Car(int id, String name, double pricePerDay, Engine engine) {
         super(id, name);
         this.pricePerDay = pricePerDay;
+        this.engine = engine;
         this.available = true;
         validate();
     }
@@ -31,7 +33,7 @@ public class Car extends BaseEntity implements Validatable, PricedItem {
 
     @Override
     public String getDescription() {
-        return name + " $" + pricePerDay + "/day";
+        return getName() + " | " + engine.getInfo() + " | $" + pricePerDay + "/day";
     }
 
     public boolean isAvailable() {
@@ -42,8 +44,7 @@ public class Car extends BaseEntity implements Validatable, PricedItem {
         this.available = false;
     }
 
-    public void returnCar() {
-        this.available = true;
+    public Engine getEngine() {
+        return engine;
     }
 }
-

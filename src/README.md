@@ -1,196 +1,288 @@
-# Car Rental Management API (Assignment 3)
+# Assignment 4 – SOLID Architecture & Advanced OOP Features
 
-## A. Project Overview
+## Project Overview
 
-### Purpose
-
-This project is a **Java-based Car Rental Management API** built using **Object-Oriented Programming (OOP)** principles, **JDBC**, and **PostgreSQL**. The goal is to demonstrate a clean multi-layer architecture with real database interaction, validation, business logic, and custom exception handling.
-
-### Domain Description
+This project is a **Car Rental System** implemented in Java using a **SOLID layered architecture**. It demonstrates advanced Object-Oriented Programming concepts, JDBC database interaction, and clean separation of responsibilities across layers.
 
 The system allows:
 
-* Managing cars (regular and electric)
-* Managing customers
-* Renting cars to customers
+* Managing cars (CRUD)
+* Renting cars with availability checks
+* Applying business rules in the service layer
+* Persisting data using PostgreSQL (JDBC)
 
-### Architecture
+---
 
-The project follows a **layered architecture**:
+## Architecture Overview
+
+The project follows a strict layered architecture:
 
 ```
-Controller → Service → Repository → Database (PostgreSQL)
+controller → service → repository → database
+```
+
+Each layer has a single responsibility and communicates only with adjacent layers.
+
+---
+
+## SOLID Principles
+
+### 1. Single Responsibility Principle (SRP)
+
+* **Controller**: Starts application flow and delegates work
+* **Service**: Contains business rules and validation
+* **Repository**: Handles only database access (JDBC)
+* **Model**: Represents domain entities
+
+Each class has one clearly defined purpose.
+
+---
+
+### 2. Open–Closed Principle (OCP)
+
+* `BaseEntity` is an abstract class
+* New entity types (e.g., `ElectricCar`) can be added without modifying existing logic
+
+Example:
+
+```java
+Car car = new ElectricCar(...);
 ```
 
 ---
 
-## B. OOP Design Documentation
+### 3. Liskov Substitution Principle (LSP)
 
-### Abstract Class
-
-**BaseEntity (abstract)**
-
-* Fields: `id`, `name`
-* Abstract methods:
-
-    * `getEntityType()`
-    * `getDescription()`
-* Concrete method:
-
-    * `basicInfo()`
-
-### Inheritance
-
-* `Car` extends `BaseEntity`
 * `ElectricCar` extends `Car`
-* `Customer` extends `BaseEntity`
+* Any `ElectricCar` can be used where a `Car` is expected
 
-### Interfaces
-
-* **Validatable** – enforces validation rules
-* **PricedItem** – calculates rental price
-
-Implemented in:
-
-* `Car`
-
-### Polymorphism Example
+Example:
 
 ```java
-BaseEntity car = new ElectricCar(...);
+Car car = new ElectricCar(...);
 System.out.println(car.getDescription());
 ```
 
-### Composition / Aggregation
+---
 
-* `Rental` contains:
+### 4. Interface Segregation Principle (ISP)
 
-    * `Car`
-    * `Customer`
+Small, focused interfaces are used:
 
-This models a real-world rental relationship.
+* `PricedItem` – price calculation behavior
+* `Validatable` – validation behavior
+
+No class is forced to implement unnecessary methods.
 
 ---
 
-## C. Database Description
+### 5. Dependency Inversion Principle (DIP)
 
-### Database: PostgreSQL
+* Services depend on **repository interfaces**, not concrete implementations
+* Repositories implement generic interfaces
+
+Example:
+
+```java
+CrudRepository<Car>
+```
+
+This allows easy replacement or extension of data access logic.
+
+---
+
+## Core OOP Design
+
+### Abstract Base Class
+
+`BaseEntity`
+
+* Fields: `id`, `name`
+* Abstract methods: `getEntityType()`, `getDescription()`
+* Concrete method: `basicInfo()`
+* Full encapsulation with getters/setters
+
+---
+
+### Inheritance Hierarchy
+
+```
+BaseEntity
+   ↑
+  Car
+   ↑
+ElectricCar
+```
+
+---
+
+### Polymorphism
+
+```java
+Car car = new ElectricCar(...);
+car.getDescription();
+```
+
+The correct overridden method is called at runtime.
+
+---
+
+### Composition
+
+* `Car` has an `Engine`
+* Demonstrates "has-a" relationship
+
+```java
+Car → Engine
+```
+
+---
+
+## Interfaces & Advanced Features
+
+### Interfaces
+
+* `PricedItem`
+* `Validatable`
+
+  * Default method: `validateNotNull()`
+  * Static method: `checkPositive()`
+
+---
+
+### Generics
+
+* Generic CRUD interface:
+
+```java
+CrudRepository<T>
+```
+
+Used to enforce type safety and reusability.
+
+---
+
+### Lambdas
+
+Used for sorting cars by price:
+
+```java
+cars.stream()
+    .sorted(Comparator.comparingDouble(c -> c.calculatePrice(1)))
+```
+
+---
+
+### Reflection (RTTI)
+
+Utility class demonstrates runtime inspection:
+
+* Class name
+* Fields
+* Methods
+
+```java
+ReflectionUtils.printClassInfo(Car.class);
+```
+
+---
+
+## Exception Handling
+
+Custom exception hierarchy:
+
+* `InvalidInputException`
+* `DuplicateResourceException`
+* `ResourceNotFoundException`
+* `DatabaseOperationException`
+
+Exceptions are thrown in the **service layer**, not the controller.
+
+---
+
+## Database Design
 
 ### Tables
 
-#### cars
+* `cars`
+* `rentals`
 
-* `id` (PK)
-* `name`
-* `price_per_day`
-* `available`
+### Relationships
 
-#### customers
+* `rentals.car_id` → foreign key referencing `cars.id`
 
-* `id` (PK)
-* `name`
-* `email` (UNIQUE)
+### Features
 
-#### rentals
-
-* `id` (PK)
-* `car_id` (FK → cars.id)
-* `customer_id` (FK → customers.id)
-* `start_date`
-* `end_date`
-
-### Sample SQL Inserts
-
-```sql
-INSERT INTO customers (name, email)
-VALUES ('Damir Dusembekov', 'ddamir@mail.com');
-```
+* Referential integrity
+* PreparedStatements (SQL injection prevention)
 
 ---
 
-## D. Controller / API Demonstration
+## JDBC & PreparedStatement
 
-The application is demonstrated using a **CLI (Main.java)**.
+PreparedStatement is used to:
 
-### Demonstrated Operations
-
-* Create cars
-* Retrieve all cars
-* Rent a car
-* Delete a car
-* Trigger validation and business rules
-
-### Example Output
-
-```
-BMW X5 - $90/day
-Tesla Model Y (Electric, 80 kWh)
-DONE
-```
+* Separate SQL from data
+* Prevent SQL injection
+* Improve performance by compiling SQL once
 
 ---
 
-## E. How to Compile and Run
+## Application Demonstration
+
+The `Main` controller demonstrates:
+
+* CREATE cars
+* READ all cars
+* SORT using lambda
+* REFLECTION output
+* UPDATE car status
+* DELETE car
+
+---
+
+## How to Run
 
 ### Requirements
 
 * Java 17+
 * PostgreSQL
-* IntelliJ IDEA
-* Maven (or JDBC driver manually added)
+* JDBC Driver
 
 ### Steps
 
 1. Create database and tables using `schema.sql`
-2. Update database credentials in `DatabaseConnection.java`
+2. Configure database connection in `DatabaseConnection`
 3. Run `Main.java`
-
----
-
-## F. Screenshots (to be added)
-
-* Successful database connection
-* CRUD operations output
-* Error handling example
-
----
-
-## G. Reflection
-
-### What I Learned
-
-* How to design an OOP-based API using abstract classes and interfaces
-* How to use JDBC with PreparedStatements
-* How to apply business logic in a service layer
-* How to structure a real-world Java backend project
-
-### Challenges
-
-* JDBC configuration
-* Foreign key constraints
-* Layer separation
-
-### Benefits of JDBC and Multi-layer Design
-
-* Clear separation of concerns
-* Easier maintenance and testing
-* Real database interaction
 
 ---
 
 ## Project Structure
 
 ```
-src/main/java
-├── controller
-├── service
-├── repository
-├── model
-├── exception
-└── utils
+src/
+ ├── controller/
+ ├── service/
+ ├── repository/
+ ├── model/
+ ├── exception/
+ ├── utils/
+ └── Main.java
 ```
 
 ---
 
-**Author:** Elnur Issayev
-**Course:** Advanced OOP with JDBC
+## What I Learned
+
+* How SOLID principles improve maintainability
+* Clean separation of responsibilities
+* Importance of interfaces and dependency inversion
+* Safe database access with JDBC
+* Practical use of advanced Java features
+
+---
+
+## Conclusion
+
+This project demonstrates a clean, scalable Java architecture applying SOLID principles, advanced OOP, JDBC, and best practices suitable for real-world backend systems.
+
